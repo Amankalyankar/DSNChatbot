@@ -1,0 +1,22 @@
+# Python-specific files and folders
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.idea/ # For PyCharm or other JetBrains IDEs
+
+# Environment variables
+.env
+instance/
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Operating System files
+.DS_Store # macOS
+Thumbs.db # Windows
