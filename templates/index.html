@@ -3,110 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mental Health Chatbot</title>
+    <title>Mental Health Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background for the entire page */
         }
-        /* Custom scrollbar for a better look */
+        /* Card-like container for the chat */
+        .chat-container {
+            background-color: #ffffff; /* White background for the chat box */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem; /* rounded-xl */
+            overflow: hidden; /* Ensures shadow and border radius are applied correctly */
+        }
+        /* Custom scrollbar for light theme */
         #chat-window::-webkit-scrollbar {
             width: 8px;
         }
         #chat-window::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #e0e7ff; /* indigo-100 */
         }
         #chat-window::-webkit-scrollbar-thumb {
-            background: #888;
+            background: #94a3b8; /* slate-400 */
             border-radius: 4px;
         }
         #chat-window::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #64748b; /* slate-500 */
         }
+        /* Avatar colors */
         .bot-message .avatar {
-            background-color: #4f46e5; /* Indigo */
+            background-color: #6366f1; /* indigo-500 */
         }
         .user-message .avatar {
-            background-color: #10b981; /* Emerald */
+            background-color: #22c55e; /* emerald-500 */
+        }
+        /* Specific header/footer colors if needed, but flex-1 should make main grow */
+        header {
+            background-color: #ffffff; /* White header */
+        }
+        footer {
+            background-color: #ffffff; /* White footer */
+        }
+        .header-disclaimer {
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* gray-500 */
+            text-align: center;
+            margin-top: 0.25rem;
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="flex items-center justify-center min-h-screen">
 
-    <!-- Main container: Full screen on mobile, centered card on larger screens -->
-    <div class="w-full max-w-2xl mx-auto h-screen bg-white flex flex-col sm:h-[90vh] sm:my-8 sm:rounded-2xl sm:shadow-2xl">
-        <!-- Header -->
-        <div class="border-b p-4">
-             <!-- Responsive header text size -->
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800 text-center">Mental Health Assistant</h1>
-            <p class="text-sm text-gray-500 text-center">This is not a replacement for professional advice.</p>
-        </div>
+    <div class="flex flex-col h-[90vh] w-full max-w-2xl chat-container">
+        <header class="p-4 shadow-sm border-b border-gray-200">
+            <h1 class="text-xl font-semibold text-center text-gray-800">Mental Health Assistant</h1>
+            <p class="header-disclaimer">This is not a replacement for professional advice.</p>
+        </header>
 
-        <!-- Chat Window -->
-        <div id="chat-window" class="flex-1 overflow-y-auto p-4 space-y-6">
-            <!-- Initial Bot Message -->
-            <div class="bot-message flex items-start gap-3">
-                <div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">B</div>
-                <div class="bg-indigo-50 p-3 rounded-lg rounded-tl-none max-w-xs sm:max-w-md">
-                    <p class="text-gray-700">Hello! How can I help you today? Feel free to ask me anything about mental health.</p>
-                </div>
-            </div>
-        </div>
+        <main id="chat-window" class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+            </main>
 
-        <!-- Typing Indicator -->
-        <div id="typing-indicator" class="hidden flex items-start gap-3 p-4">
-             <div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">B</div>
-             <div class="bg-indigo-50 p-3 rounded-lg rounded-tl-none">
-                <div class="flex items-center space-x-1">
-                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0s;"></span>
-                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></span>
-                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></span>
-                </div>
-             </div>
-        </div>
-
-        <!-- Input Form -->
-        <div class="border-t p-2 sm:p-4">
-            <!-- Form stacks vertically on mobile, row on larger screens -->
-            <form id="chat-form" class="flex flex-col sm:flex-row items-center gap-2">
-                <input type="text" id="message-input" placeholder="Type your query here..." autocomplete="off" class="flex-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                <!-- Button is full-width on mobile, auto-width on larger screens -->
-                <button type="submit" class="w-full sm:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shadow-md">
+        <footer class="p-4 border-t border-gray-200">
+            <form id="chat-form" class="flex items-center gap-3">
+                <input type="text" id="user-input"
+                    class="flex-1 p-2 rounded-lg bg-gray-100 border border-gray-300 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    placeholder="Type your query here..." autocomplete="off">
+                <button type="submit" id="send-button"
+                    class="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-indigo-400">
                     Send
                 </button>
             </form>
-        </div>
+        </footer>
     </div>
 
     <script>
-        const chatForm = document.getElementById('chat-form');
-        const messageInput = document.getElementById('message-input');
         const chatWindow = document.getElementById('chat-window');
-        const typingIndicator = document.getElementById('typing-indicator');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
 
-        // --- Handle form submission ---
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message) return;
+        // Display a welcome message when the page loads
+        window.addEventListener('load', () => {
+            displayMessage("Hello! How can I help you today? Feel free to ask me anything about mental health.", 'bot');
+        });
 
-            // Display user's message
-            displayMessage(message, 'user');
-            messageInput.value = '';
+        chatForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            sendMessage();
+        });
+
+        function displayMessage(message, sender, source = null) {
+            const messageWrapper = document.createElement('div');
+            let messageHtml;
+
+            if (sender === 'user') {
+                messageWrapper.className = 'user-message flex items-start gap-3 justify-end';
+                messageHtml = `
+                    <div class="bg-emerald-100 p-3 rounded-lg rounded-br-none max-w-xs sm:max-w-md">
+                        <p class="text-gray-800">${message}</p>
+                    </div>
+                    <div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">U</div>
+                `;
+            } else { // sender is 'bot'
+                messageWrapper.className = 'bot-message flex items-start gap-3';
+                const sourceHtml = source ? `<p class="text-xs text-gray-500 mt-2">${source}</p>` : '';
+                
+                messageHtml = `
+                    <div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">B</div>
+                    <div class="bg-indigo-100 p-3 rounded-lg rounded-tl-none max-w-xs sm:max-w-md">
+                        <p class="text-gray-800">${message}</p>
+                        ${sourceHtml}
+                    </div>
+                `;
+            }
             
-            // Show typing indicator
-            typingIndicator.classList.remove('hidden');
+            messageWrapper.innerHTML = messageHtml;
+            chatWindow.appendChild(messageWrapper);
             chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            displayMessage(message, 'user');
+
+            userInput.value = '';
+            userInput.disabled = true;
+            sendButton.disabled = true;
 
             try {
-                // Send message to the Flask backend
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({ message: message }),
                 });
 
                 if (!response.ok) {
@@ -115,45 +149,17 @@
 
                 const data = await response.json();
                 
-                // Display bot's response
-                displayMessage(data.response, 'bot');
+                // --- Pass the source data to the displayMessage function (already present) ---
+                displayMessage(data.response, 'bot', data.source);
 
             } catch (error) {
-                console.error("Error fetching chat response:", error);
-                displayMessage("Sorry, something went wrong. Please try again.", 'bot');
+                console.error('Error:', error);
+                displayMessage('Sorry, something went wrong. Please try again.', 'bot');
             } finally {
-                // Hide typing indicator
-                typingIndicator.classList.add('hidden');
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
             }
-        });
-
-        // --- Function to display a message in the chat window ---
-        function displayMessage(message, sender) {
-            const messageWrapper = document.createElement('div');
-            let messageHtml;
-
-            if (sender === 'user') {
-                messageWrapper.className = 'user-message flex items-start gap-3 justify-end';
-                messageHtml = `
-                    <div class="bg-emerald-50 p-3 rounded-lg rounded-br-none max-w-xs sm:max-w-md">
-                        <p class="text-gray-700">${message}</p>
-                    </div>
-                    <div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">U</div>
-                `;
-            } else { // sender is 'bot'
-                messageWrapper.className = 'bot-message flex items-start gap-3';
-                messageHtml = `
-                    <div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">B</div>
-                    <div class="bg-indigo-50 p-3 rounded-lg rounded-tl-none max-w-xs sm:max-w-md">
-                        <p class="text-gray-700">${message}</p>
-                    </div>
-                `;
-            }
-            
-            messageWrapper.innerHTML = messageHtml;
-            chatWindow.appendChild(messageWrapper);
-            // Scroll to the latest message
-            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
     </script>
 </body>
