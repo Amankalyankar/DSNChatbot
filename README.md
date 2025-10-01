@@ -40,7 +40,7 @@ The application is a web-based chatbot. When a user sends a message, it is sent 
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/Aman-627/DSNChatbot.git](https://github.com/Aman-627/DSNChatbot.git)
+    git clone https://github.com/Aman-627/DSNChatbot.git
     cd DSNChatbot
     ```
 2.  **Create a virtual environment:**
