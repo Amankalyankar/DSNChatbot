@@ -24,7 +24,7 @@ The application is a web-based chatbot. When a user sends a message, it is sent 
     * **Retrieval-Only (Default)**: If the highest similarity score is above a threshold, the corresponding pre-written answer is returned directly.
     * **RAG (Upgraded)**: The best-matching answer from the CSV is used as **context**. This context is then sent to a Large Language Model (LLM) via the Groq API, which **generates** a new, conversational response.
 
-***
+```
 
 ## 📂 Project Structure
 ├── .env                # To store your Groq API key
@@ -34,7 +34,7 @@ The application is a web-based chatbot. When a user sends a message, it is sent 
 ├── templates
   └── index.html      # The HTML template for the chat interface
 
-***
+```
 
 ## 🛠️ Installation
 
