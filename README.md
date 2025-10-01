@@ -6,7 +6,7 @@ Initially, this project functions as a **retrieval-based model**. It uses a TF-I
 
 ***
 
-## 🚀 Features
+##  Features
 
 * **Simple & Clean UI**: A responsive and intuitive chat interface.
 * **Similarity-Based Responses**: Leverages a TF-IDF Vectorizer and Cosine Similarity to find the best-matching question from the knowledge base.
@@ -15,7 +15,7 @@ Initially, this project functions as a **retrieval-based model**. It uses a TF-I
 
 ***
 
-## ⚙️ How It Works
+##  How It Works
 
 The application is a web-based chatbot. When a user sends a message, it is sent to the Flask backend.
 
@@ -25,18 +25,16 @@ The application is a web-based chatbot. When a user sends a message, it is sent 
     * **RAG (Upgraded)**: The best-matching answer from the CSV is used as **context**. This context is then sent to a Large Language Model (LLM) via the Groq API, which **generates** a new, conversational response.
 
 ```
-
-## 📂 Project Structure
+##  Project Structure
 ├── .env                # To store your Groq API key
 ├── app.py              # The main Flask application
 ├── requirements.txt      # Python dependencies
 ├── Test_data.csv         # The knowledge base for the chatbot
 ├── templates
   └── index.html      # The HTML template for the chat interface
-
 ```
 
-## 🛠️ Installation
+##  Installation
 
 1.  **Clone the repository:**
     ```bash
@@ -62,7 +60,7 @@ The application is a web-based chatbot. When a user sends a message, it is sent 
 
 ***
 
-## ▶️ Usage
+##  Usage
 
 1.  **Run the Flask application:**
     ```bash
@@ -79,7 +77,7 @@ You should see the chat interface. Type a question to get a response.
 
 ***
 
-## 🧠 From Retrieval to RAG: Upgrading to a Generative Model
+##  From Retrieval to RAG: Upgrading to a Generative Model
 
 This project is a perfect starting point for building a RAG model. The "Retrieval" part is already done. The only missing piece is the **"Augmented Generation,"** which we can add using `groq`.
 
@@ -183,7 +181,7 @@ With these changes, your chatbot will now use the CSV to find relevant context a
 
 ***
 
-## 📦 Dependencies
+##  Dependencies
 
 * Flask
 * pandas
