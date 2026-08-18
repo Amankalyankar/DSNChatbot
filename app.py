@@ -6,119 +6,275 @@ from sklearn.metrics.pairwise import cosine_similarity
 from groq import Groq
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-# --- Load and Preprocess CSV Data ---
-try:
-    # Load the FAQ data from the CSV file
-    df = pd.read_csv('Test_data.csv')
-    # Ensure the 'Questions' and 'Answers' columns are strings
-    df['Questions'] = df['Questions'].astype(str)
-    df['Answers'] = df['Answers'].astype(str)
-    questions = df['Questions'].tolist()
+# =========================================================
+# LOAD CSV DATA
+# =========================================================
 
-    # Create a TF-IDF Vectorizer
-    vectorizer = TfidfVectorizer()
+try:
+    df = pd.read_csv("Test_data.csv")
+
+    df["Questions"] = df["Questions"].astype(str)
+    df["Answers"] = df["Answers"].astype(str)
+
+    questions = df["Questions"].tolist()
+
+    # Better TF-IDF:
+    # Word n-grams understand phrases
+    # Character n-grams help with differently-worded questions / spelling
+    vectorizer = TfidfVectorizer(
+        lowercase=True,
+        stop_words="english",
+        ngram_range=(1, 2),
+        sublinear_tf=True
+    )
+
     question_vectors = vectorizer.fit_transform(questions)
-    print("CSV data loaded and vectorized successfully.")
+
+    print(f"CSV loaded successfully: {len(df)} questions")
+
 except FileNotFoundError:
-    print("Error: Test_data.csv not found. Please make sure the file is in the correct directory.")
+    print("ERROR: Test_data.csv not found.")
     df = None
 
-# --- Initialize Groq Client ---
+
+# =========================================================
+# GROQ SETUP
+# =========================================================
+
 try:
     groq_api_key = os.environ.get("GROQ_API_KEY")
+
     if not groq_api_key:
-        print("Error: GROQ_API_KEY not found in environment variables.")
+        print("ERROR: GROQ_API_KEY not found in .env")
         client = None
+
     else:
         client = Groq(api_key=groq_api_key)
         print("Groq client initialized successfully.")
+
 except Exception as e:
-    print(f"Error initializing Groq client: {e}")
+    print(f"Error initializing Groq: {e}")
     client = None
 
-# --- Flask Routes ---
 
-@app.route('/')
+# =========================================================
+# HOME PAGE
+# =========================================================
+
+@app.route("/")
 def index():
-    """Renders the main chat page."""
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/chat', methods=['POST'])
+
+# =========================================================
+# CHAT
+# =========================================================
+
+@app.route("/chat", methods=["POST"])
 def chat():
-    """Handles chat logic: Find in CSV, then refine with AI."""
+
+    # -----------------------------------------------------
+    # Check CSV
+    # -----------------------------------------------------
+
     if df is None:
         return jsonify({
-            'response': 'I am unable to provide answers right now. The data file is missing.', 
-            'source': 'Error', 
-            'similarity_score': 0
+            "response": "The CSV knowledge base is missing.",
+            "source": "Error",
+            "similarity_score": 0
         })
 
-    user_message = request.json.get('message', '')
+
+    # -----------------------------------------------------
+    # Get user message
+    # -----------------------------------------------------
+
+    user_message = request.json.get("message", "").strip()
+
     if not user_message:
         return jsonify({
-            'response': 'Please enter a message.', 
-            'source': 'System', 
-            'similarity_score': 0
+            "response": "Please enter a message.",
+            "source": "System",
+            "similarity_score": 0
         })
 
-    # --- Step 1: Find the best answer from the CSV ---
+
+    # =====================================================
+    # STEP 1: FIND SIMILAR QUESTIONS
+    # =====================================================
+
     user_vector = vectorizer.transform([user_message])
-    similarities = cosine_similarity(user_vector, question_vectors)
-    most_similar_index = similarities.argmax()
-    highest_similarity_score = similarities[0, most_similar_index]
-    
-    SIMILARITY_THRESHOLD = 0.24 # You can adjust this value
 
-    if highest_similarity_score > SIMILARITY_THRESHOLD:
-        # Retrieve the best answer from the CSV
-        retrieved_answer = df['Answers'].iloc[most_similar_index]
-        matched_question = df['Questions'].iloc[most_similar_index]
-        
-        # Format the source string to include the score
-        source = f"Matched: '{matched_question}' (Score: {highest_similarity_score:.2%})"
+    similarities = cosine_similarity(
+        user_vector,
+        question_vectors
+    )[0]
 
-        # --- Step 2: Use AI to refine the retrieved answer ---
-        if client:
-            try:
-                refine_prompt = (
-                    "Please rephrase the following text to be more supportive, empathetic, and conversational, "
-                    "while keeping the core information intact. Keep the response to 2-3 sentences.\n\n"
-                    "Original Text:\n"
-                    f"\"{retrieved_answer}\""
-                )
+    # Get top 3 matches
+    top_indices = similarities.argsort()[-3:][::-1]
 
-                refinement_completion = client.chat.completions.create(
-                    messages=[
-                        {"role": "system", "content": "You are an expert at rephrasing text to be more empathetic and clear."},
-                        {"role": "user", "content": refine_prompt},
-                    ],
-                    model="gemma2-9b-it",
-                )
-                response_message = refinement_completion.choices[0].message.content
-            except Exception as e:
-                print(f"Error calling Groq API for refinement: {e}")
-                # Fallback to the original answer if AI fails
-                response_message = retrieved_answer
-                source += " (AI refinement failed)"
-        else:
-            # If the client isn't configured, just use the original answer
-            response_message = retrieved_answer
-            source += " (AI not configured)"
+    best_index = top_indices[0]
+    best_score = similarities[best_index]
+
+    matched_question = df["Questions"].iloc[best_index]
+    matched_answer = df["Answers"].iloc[best_index]
+
+
+    # =====================================================
+    # RELEVANCE THRESHOLD
+    # =====================================================
+
+    # You can adjust this later.
+    SIMILARITY_THRESHOLD = 0.10
+
+    if best_score < SIMILARITY_THRESHOLD:
+
+        return jsonify({
+            "response": (
+                "I'm sorry, but I couldn't find enough relevant "
+                "information in my knowledge base to answer that."
+            ),
+            "source": "No relevant CSV match",
+            "similarity_score": float(best_score)
+        })
+
+
+    # =====================================================
+    # STEP 2: BUILD CONTEXT FROM TOP 3 CSV MATCHES
+    # =====================================================
+
+    context = ""
+
+    for rank, index in enumerate(top_indices, start=1):
+
+        score = similarities[index]
+
+        # Only include reasonably relevant matches
+        if score >= SIMILARITY_THRESHOLD:
+
+            context += f"""
+--- CSV RESULT {rank} ---
+Question:
+{df["Questions"].iloc[index]}
+
+Answer:
+{df["Answers"].iloc[index]}
+
+Similarity:
+{score:.2%}
+
+"""
+
+
+    # =====================================================
+    # STEP 3: ASK GROQ
+    # =====================================================
+
+    if client:
+
+        try:
+
+            prompt = f"""
+You are an assistant that answers questions using a CSV knowledge base.
+
+USER QUESTION:
+{user_message}
+
+CSV KNOWLEDGE BASE:
+{context}
+
+IMPORTANT RULES:
+
+1. Use ONLY the information contained in the CSV knowledge base.
+2. Do NOT add facts from your own knowledge.
+3. Do NOT invent statistics, diagnoses, symptoms, treatments,
+   recommendations, or other information.
+4. Combine information from the CSV results only when appropriate.
+5. If the CSV does not contain enough information to answer the
+   question, clearly say that the knowledge base does not contain
+   enough information.
+6. Answer the user's actual question directly.
+7. Keep the answer clear, supportive, and conversational.
+8. Do not mention "TF-IDF", similarity scores, or internal processing.
+9. Do not say "according to result 1" or expose the retrieval process.
+"""
+
+            completion = client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a careful knowledge-base assistant. "
+                            "You must stay strictly grounded in the "
+                            "provided CSV information."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.2,
+                max_tokens=300
+            )
+
+            response_message = completion.choices[0].message.content.strip()
+
+            source = (
+                f"Best CSV match: '{matched_question}' "
+                f"(Score: {best_score:.2%})"
+            )
+
+
+        except Exception as e:
+
+            print(f"Groq API error: {e}")
+
+            # ---------------------------------------------
+            # FALLBACK TO ORIGINAL CSV ANSWER
+            # ---------------------------------------------
+
+            response_message = matched_answer
+
+            source = (
+                f"CSV fallback: '{matched_question}' "
+                f"(Score: {best_score:.2%})"
+            )
+
     else:
-        # If no good match is found, provide a default response without calling AI
-        response_message = "I'm not sure I have information on that. Could you please try asking in a different way?"
-        source = "Default Fallback"
+
+        # =================================================
+        # GROQ NOT CONFIGURED
+        # =================================================
+
+        response_message = matched_answer
+
+        source = (
+            f"CSV answer: '{matched_question}' "
+            f"(Score: {best_score:.2%})"
+        )
+
+
+    # =====================================================
+    # RETURN RESPONSE
+    # =====================================================
 
     return jsonify({
-        'response': response_message, 
-        'source': source,
-        'similarity_score': float(highest_similarity_score) # Return the score
+        "response": response_message,
+        "source": source,
+        "similarity_score": float(best_score)
     })
 
-if __name__ == '__main__':
+
+# =========================================================
+# RUN FLASK
+# =========================================================
+
+if __name__ == "__main__":
     app.run(debug=True)
